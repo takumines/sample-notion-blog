@@ -1,10 +1,11 @@
-import { MultiSelectType } from '@/app/_lib/notion/type'
+import { MultiSelectType, Post } from '@/app/_lib/notion/type'
 import {
   isMultiSelect,
   isPageObjectResponse,
   isRichText,
   isTitle,
 } from '@/app/_lib/notion/type-guard'
+import { formatISODateTimeToDate } from '@/app/_utils'
 import { Client } from '@notionhq/client'
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import { cache } from 'react'
@@ -13,25 +14,31 @@ const notionClient = new Client({
   auth: process.env.NOTION_SECRET_TOKEN,
 })
 
-export const getAllPosts = cache(async () => {
+export const getAllPosts = cache(async (): Promise<Post[]> => {
   const res = await notionClient.databases.query({
     database_id: process.env.NOTION_DATABASE_ID!,
   })
   const allPosts = res.results
 
+  if (!allPosts) {
+    return []
+  }
+
   return allPosts
     .map((post) => {
       const pageObject = isPageObjectResponse(post) ? post : undefined
       if (!pageObject) {
-        return {}
+        return pageObject
       }
       return getPageMetaData(pageObject)
     })
-    .filter((post) => Object.keys(post).length !== 0)
+    .filter((post): post is Post => !!post)
 })
 
 const getPageMetaData = (post: PageObjectResponse) => {
   const { created_time, id, properties } = post
+
+  const date = formatISODateTimeToDate(created_time)
   const description = isRichText(properties.Description)
     ? properties.Description.rich_text[0].plain_text
     : ''
@@ -46,7 +53,7 @@ const getPageMetaData = (post: PageObjectResponse) => {
     : []
 
   return {
-    date: created_time,
+    date,
     description,
     id,
     slug,
