@@ -13,3 +13,12 @@ type ExtractMultiSelectType<T> = T extends {
 export type MultiSelectType = ExtractMultiSelectType<
   PageObjectResponse['properties'][keyof PageObjectResponse['properties']]
 >
+
+export type Post = {
+  date: string
+  description: string
+  id: string
+  slug: string
+  tags: string[]
+  title: string
+}
