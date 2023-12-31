@@ -15,11 +15,11 @@ const notionClient = new Client({
 })
 
 /**
- * 全ての記事を取得
+ *  全ての記事を取得
  *
  * @type {() => Promise<Post[]>}
  */
-export const getAllPostList = cache(async (): Promise<Post[]> => {
+export const getAllPostList: () => Promise<Post[]> = cache(async () => {
   const res = await notionClient.databases.query({
     database_id: process.env.NOTION_DATABASE_ID!,
   })
@@ -41,29 +41,36 @@ export const getAllPostList = cache(async (): Promise<Post[]> => {
 })
 
 /**
- * 記事詳細を取得
  *
- * @type {(slug: string) => Promise<{post: PageObjectResponse | PartialPageObjectResponse | PartialDatabaseObjectResponse | DatabaseObjectResponse}>}
+ * @type {(slug: string) => Promise<Post>}
  */
-export const getPostBySlug = cache(async (slug: string) => {
-  const response = await notionClient.databases.query({
-    database_id: process.env.NOTION_DATABASE_ID!,
-    filter: {
-      formula: {
-        string: {
-          equals: slug,
+export const getPostBySlug: (slug: string) => Promise<Post> = cache(
+  async (slug: string) => {
+    const response = await notionClient.databases.query({
+      database_id: process.env.NOTION_DATABASE_ID!,
+      filter: {
+        formula: {
+          string: {
+            equals: slug,
+          },
         },
+        property: 'Slug',
       },
-      property: 'Slug',
-    },
-  })
+    })
 
-  const post = response.results[0]
-  console.log(post)
-  return {
-    post,
-  }
-})
+    const PageObject = isPageObjectResponse(response.results[0])
+      ? response.results[0]
+      : undefined
+    if (!PageObject) {
+      // TODO: エラー処理は後で整える
+      throw new Error(`Cannot find post with slug: ${slug}`)
+    }
+
+    const post = getPageMetaData(PageObject)
+
+    return post
+  },
+)
 
 /**
  * 記事のメタデータを取得
@@ -71,7 +78,16 @@ export const getPostBySlug = cache(async (slug: string) => {
  * @param {PageObjectResponse} post
  * @returns {{date: string, description: string, id: string, title: string, slug: string, tags: string[]}}
  */
-const getPageMetaData = (post: PageObjectResponse) => {
+const getPageMetaData = (
+  post: PageObjectResponse,
+): {
+  date: string
+  description: string
+  id: string
+  slug: string
+  tags: string[]
+  title: string
+} => {
   const { created_time, id, properties } = post
 
   const date = formatISODateTimeToDate(created_time)
