@@ -44,7 +44,7 @@ export const getAllPostList: () => Promise<Post[]> = cache(async () => {
  *
  * @type {(slug: string) => Promise<Post>}
  */
-export const getPostBySlug: (slug: string) => Promise<Post> = cache(
+export const getPostBySlug: (slug: string) => Promise<Post | undefined> = cache(
   async (slug: string) => {
     const response = await notionClient.databases.query({
       database_id: process.env.NOTION_DATABASE_ID!,
@@ -63,7 +63,7 @@ export const getPostBySlug: (slug: string) => Promise<Post> = cache(
       : undefined
     if (!PageObject) {
       // TODO: エラー処理は後で整える
-      throw new Error(`Cannot find post with slug: ${slug}`)
+      return undefined
     }
 
     const post = getPageMetaData(PageObject)
