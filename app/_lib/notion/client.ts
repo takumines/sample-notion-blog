@@ -14,7 +14,12 @@ const notionClient = new Client({
   auth: process.env.NOTION_SECRET_TOKEN,
 })
 
-export const getAllPosts = cache(async (): Promise<Post[]> => {
+/**
+ * 全ての記事を取得
+ *
+ * @type {() => Promise<Post[]>}
+ */
+export const getAllPostList = cache(async (): Promise<Post[]> => {
   const res = await notionClient.databases.query({
     database_id: process.env.NOTION_DATABASE_ID!,
   })
@@ -35,6 +40,37 @@ export const getAllPosts = cache(async (): Promise<Post[]> => {
     .filter((post): post is Post => !!post)
 })
 
+/**
+ * 記事詳細を取得
+ *
+ * @type {(slug: string) => Promise<{post: PageObjectResponse | PartialPageObjectResponse | PartialDatabaseObjectResponse | DatabaseObjectResponse}>}
+ */
+export const getPostBySlug = cache(async (slug: string) => {
+  const response = await notionClient.databases.query({
+    database_id: process.env.NOTION_DATABASE_ID!,
+    filter: {
+      formula: {
+        string: {
+          equals: slug,
+        },
+      },
+      property: 'Slug',
+    },
+  })
+
+  const post = response.results[0]
+  console.log(post)
+  return {
+    post,
+  }
+})
+
+/**
+ * 記事のメタデータを取得
+ *
+ * @param {PageObjectResponse} post
+ * @returns {{date: string, description: string, id: string, title: string, slug: string, tags: string[]}}
+ */
 const getPageMetaData = (post: PageObjectResponse) => {
   const { created_time, id, properties } = post
 
@@ -62,6 +98,12 @@ const getPageMetaData = (post: PageObjectResponse) => {
   }
 }
 
-const getTags = (tags: MultiSelectType) => {
+/**
+ * タグの取得
+ *
+ * @param {MultiSelectType} tags
+ * @returns {string[]}
+ */
+const getTags = (tags: MultiSelectType): string[] => {
   return tags.map((tag) => tag.name)
 }
