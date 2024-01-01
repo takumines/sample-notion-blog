@@ -2,6 +2,7 @@ import { Header } from '@/app/_components/navigation'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import React from 'react'
+import 'zenn-content-css'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })

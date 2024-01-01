@@ -9,7 +9,7 @@ const Post = async ({ params }: { params: { slug: string } }) => {
     notFound()
   }
 
-  const { date, description, tags, title } = post
+  const { content, date, description, tags, title } = post
 
   return (
     <section className="container mx-auto mt-20 h-screen px-5 lg:w-2/5 lg:px-2">
@@ -25,7 +25,12 @@ const Post = async ({ params }: { params: { slug: string } }) => {
           {tag}
         </p>
       ))}
-      <div className="mt-10 font-medium">{description}</div>
+      <div
+        className="znc"
+        dangerouslySetInnerHTML={{
+          __html: content,
+        }}
+      />
     </section>
   )
 }
