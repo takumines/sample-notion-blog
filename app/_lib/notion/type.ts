@@ -22,3 +22,7 @@ export type Post = {
   tags: string[]
   title: string
 }
+
+export type PostDetail = Post & {
+  content: string
+}

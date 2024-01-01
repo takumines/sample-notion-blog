@@ -1,4 +1,4 @@
-import { MultiSelectType, Post } from '@/app/_lib/notion/type'
+import { MultiSelectType, Post, PostDetail } from '@/app/_lib/notion/type'
 import {
   isMultiSelect,
   isPageObjectResponse,
@@ -8,11 +8,15 @@ import {
 import { formatISODateTimeToDate } from '@/app/_utils'
 import { Client } from '@notionhq/client'
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
+import { NotionToMarkdown } from 'notion-to-md'
 import { cache } from 'react'
+import markdownToHtml from 'zenn-markdown-html'
 
 const notionClient = new Client({
   auth: process.env.NOTION_SECRET_TOKEN,
 })
+
+const n2m = new NotionToMarkdown({ notionClient })
 
 /**
  *  全ての記事を取得
@@ -42,10 +46,10 @@ export const getAllPostList: () => Promise<Post[]> = cache(async () => {
 
 /**
  *
- * @type {(slug: string) => Promise<Post>}
+ * @type {(slug: string) => Promise<PostDetail>}
  */
-export const getPostBySlug: (slug: string) => Promise<Post | undefined> = cache(
-  async (slug: string) => {
+export const getPostBySlug: (slug: string) => Promise<PostDetail | undefined> =
+  cache(async (slug: string) => {
     const response = await notionClient.databases.query({
       database_id: process.env.NOTION_DATABASE_ID!,
       filter: {
@@ -67,27 +71,23 @@ export const getPostBySlug: (slug: string) => Promise<Post | undefined> = cache(
     }
 
     const post = getPageMetaData(PageObject)
+    const blocks = await n2m.pageToMarkdown(PageObject.id)
+    const blockString = n2m.toMarkdownString(blocks).parent
+    const html = markdownToHtml(blockString)
 
-    return post
-  },
-)
+    return {
+      content: html,
+      ...post,
+    }
+  })
 
 /**
  * 記事のメタデータを取得
  *
  * @param {PageObjectResponse} post
- * @returns {{date: string, description: string, id: string, title: string, slug: string, tags: string[]}}
+ * @returns {Post}
  */
-const getPageMetaData = (
-  post: PageObjectResponse,
-): {
-  date: string
-  description: string
-  id: string
-  slug: string
-  tags: string[]
-  title: string
-} => {
+const getPageMetaData = (post: PageObjectResponse): Post => {
   const { created_time, id, properties } = post
 
   const date = formatISODateTimeToDate(created_time)
