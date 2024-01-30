@@ -1,4 +1,4 @@
-import { getAllPostList, getPostBySlug } from '@/app/_lib/notion'
+import { getPostBySlug, getPostListForTopPage } from '@/app/_lib/notion'
 import { notFound } from 'next/navigation'
 
 const Post = async ({ params }: { params: { slug: string } }) => {
@@ -36,7 +36,7 @@ const Post = async ({ params }: { params: { slug: string } }) => {
 }
 
 export const generateStaticParams = async () => {
-  const postList = await getAllPostList()
+  const postList = await getPostListForTopPage()
 
   return postList.map((post) => ({
     slug: post.slug,

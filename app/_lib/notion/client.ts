@@ -19,37 +19,54 @@ const notionClient = new Client({
 const n2m = new NotionToMarkdown({ notionClient })
 
 /**
- *  全ての記事を取得
+ * 記事一覧を取得
  *
- * @type {() => Promise<Post[]>}
+ * @param {number} pageSize
+ * @returns {Promise<Post[]>}
  */
-export const getAllPostList: () => Promise<Post[]> = cache(async () => {
-  const res = await notionClient.databases.query({
-    database_id: process.env.NOTION_DATABASE_ID!,
-  })
-  const allPosts = res.results
-
-  if (!allPosts) {
-    return []
-  }
-
-  return allPosts
-    .map((post) => {
-      const pageObject = isPageObjectResponse(post) ? post : undefined
-      if (!pageObject) {
-        return pageObject
-      }
-      return getPageMetaData(pageObject)
+export const getAllPostList = cache(
+  async (pageSize: number = 10): Promise<Post[]> => {
+    const res = await notionClient.databases.query({
+      database_id: process.env.NOTION_DATABASE_ID!,
+      page_size: pageSize,
     })
-    .filter((post): post is Post => !!post)
+    const allPosts = res.results
+
+    if (!allPosts) {
+      return []
+    }
+
+    return allPosts
+      .map((post) => {
+        const pageObject = isPageObjectResponse(post) ? post : undefined
+        if (!pageObject) {
+          return pageObject
+        }
+        return getPageMetaData(pageObject)
+      })
+      .filter((post): post is Post => !!post)
+  },
+)
+
+/**
+ * トップページで表示する記事一覧を取得
+ *
+ * @returns {Promise<Post[]>}
+ */
+export const getPostListForTopPage = cache(async () => {
+  const allPost = await getAllPostList(4)
+
+  return allPost
 })
 
 /**
+ * 記事を取得
  *
- * @type {(slug: string) => Promise<PostDetail>}
+ * @param {string} slug
+ * @returns {Promise<PostDetail | undefined>}
  */
-export const getPostBySlug: (slug: string) => Promise<PostDetail | undefined> =
-  cache(async (slug: string) => {
+export const getPostBySlug = cache(
+  async (slug: string): Promise<PostDetail | undefined> => {
     const response = await notionClient.databases.query({
       database_id: process.env.NOTION_DATABASE_ID!,
       filter: {
@@ -79,7 +96,8 @@ export const getPostBySlug: (slug: string) => Promise<PostDetail | undefined> =
       content: html,
       ...post,
     }
-  })
+  },
+)
 
 /**
  * 記事のメタデータを取得

@@ -1,11 +1,11 @@
 import { PostListCard } from '@/app/_components/post'
-import { getAllPostList } from '@/app/_lib/notion/client'
+import { getPostListForTopPage } from '@/app/_lib/notion/client'
 import Head from 'next/head'
 
 export const revalidate = 3600
 
 export default async function Home() {
-  const allPosts = await getAllPostList()
+  const allPosts = await getPostListForTopPage()
 
   return (
     <div className="container mx-auto h-full w-full font-mono">
