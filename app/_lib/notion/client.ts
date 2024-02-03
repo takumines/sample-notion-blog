@@ -25,7 +25,7 @@ const n2m = new NotionToMarkdown({ notionClient })
  * @returns {Promise<Post[]>}
  */
 export const getAllPostList = cache(
-  async (pageSize: number = 10): Promise<Post[]> => {
+  async (pageSize: number = 100): Promise<Post[]> => {
     const res = await notionClient.databases.query({
       database_id: process.env.NOTION_DATABASE_ID!,
       page_size: pageSize,

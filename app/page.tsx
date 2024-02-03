@@ -2,7 +2,7 @@ import { PostListCard } from '@/app/_components/post'
 import { getPostListForTopPage } from '@/app/_lib/notion/client'
 import Head from 'next/head'
 
-export const revalidate = 3600
+export const revalidate = 60
 
 export default async function Home() {
   const allPosts = await getPostListForTopPage()
